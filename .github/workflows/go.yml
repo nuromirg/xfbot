@@ -19,7 +19,7 @@ jobs:
         go-version: 1.17
 
     - name: Install Deps
-      run: apt-get update -qq && apt-get -y install libopus-dev libopusfile-dev
+      run: apt-get -y update -qq && apt-get -y install libopus-dev libopusfile-dev
 
     - name: Build
       run: go build -v ./cmd
