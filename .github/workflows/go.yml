@@ -12,14 +12,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
+    - run: apt-get -y update -qq && apt-get -y install libopus-dev libopusfile-dev
 
     - name: Set up Go
       uses: actions/setup-go@v3
       with:
         go-version: 1.17
-
-    - name: Install Deps
-      run: apt-get -y update -qq && apt-get -y install libopus-dev libopusfile-dev
 
     - name: Build
       run: go build -v ./cmd
