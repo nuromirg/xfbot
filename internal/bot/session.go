@@ -15,7 +15,7 @@ type Session struct {
 	conn      *core.Connection
 }
 
-func CreateSession(conn *core.Connection, guildID, channelID string) *Session {
+func NewSession(conn *core.Connection, guildID, channelID string) *Session {
 	return &Session{
 		Queue:     NewQueue(),
 		GuildID:   guildID,
@@ -62,7 +62,7 @@ func (ss Sessions) Join(discord *discordgo.Session, guildID, channelID string,
 		return nil, err
 	}
 
-	s := CreateSession(core.New(vc), guildID, channelID)
+	s := NewSession(core.New(vc), guildID, channelID)
 	ss[channelID] = s
 
 	return s, nil

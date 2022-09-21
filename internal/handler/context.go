@@ -1,10 +1,11 @@
 package handler
 
 import (
-	"github.com/bwmarrin/discordgo"
-	"github.com/sirupsen/logrus"
 	"xfbot/internal/bot"
 	"xfbot/internal/pkg"
+
+	"github.com/bwmarrin/discordgo"
+	"github.com/sirupsen/logrus"
 )
 
 type Context struct {
