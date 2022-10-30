@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
@@ -9,18 +10,19 @@ import (
 	"strings"
 	"xfbot/internal/bot"
 	"xfbot/internal/handler"
+	"xfbot/internal/models"
 	"xfbot/internal/pkg"
 )
 
 func main() {
 	if err := godotenv.Load("./cmd/test.env"); err != nil {
-		log.Fatalf("error occured when reading env. Error: %s", err.Error())
+		log.Fatalf("error occurred when reading env. Error: %s", err.Error())
 	}
 
 	token := os.Getenv("BOT_TOKEN")
-	// ownerID := os.Getenv("OWNER_ID")
 	prefix := os.Getenv("PREFIX")
 	youtubeURL := os.Getenv("YOUTUBE_URL")
+	appID := os.Getenv("APP_ID")
 
 	h := handler.NewHandler()
 	h.Init()
@@ -42,6 +44,65 @@ func main() {
 
 	botID := user.ID
 
+	registeredCommands := make([]*discordgo.ApplicationCommand, 0)
+	for _, cmd := range models.Commands {
+		registered, err := discord.ApplicationCommandCreate(appID, "", cmd)
+		if err != nil {
+			log.Panicf("cannot create '%v' command: %v", cmd.Name, err)
+		}
+
+		registeredCommands = append(registeredCommands, registered)
+	}
+
+	slashEvents := handler.NewSlashEvents(registeredCommands)
+	if err := slashEvents.Init(); err != nil {
+		return
+	}
+
+	events := slashEvents.Events()
+	discord.AddHandler(func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+		var author *discordgo.User
+		if i.User != nil {
+			author = i.User
+			if author.ID == botID || i.User.Bot {
+				logrus.Warnf("bot cannot execute slash commands. Username of the bot is %s\n", i.User.Username)
+				return
+			}
+
+		} else {
+			author = i.Member.User
+			if author.ID == botID || i.Member.User.Bot {
+				logrus.Warnf("bot cannot execute slash commands. Username of the bot is %s\n", i.Member.User.Username)
+				return
+			}
+		}
+
+		channel, err := s.State.Channel(i.ChannelID)
+		if err != nil {
+			logrus.Errorf("cannot get the channel: %s\n", err.Error())
+			return
+		}
+
+		guild, err := s.State.Guild(channel.GuildID)
+		if err != nil {
+			logrus.Errorf("cannot get the guild.: %s\n", err.Error())
+			return
+		}
+
+		eCtx := handler.EventContext{
+			Session:     s,
+			Guild:       guild,
+			Interaction: i.Interaction,
+			User:        author,
+			Sessions:    &sessions,
+			Youtube:     ytClient,
+		}
+
+		if h, ok := events[i.ApplicationCommandData().Name]; ok {
+			h(s, i, eCtx)
+		}
+	})
+
 	discord.AddHandler(func(session *discordgo.Session, message *discordgo.MessageCreate) {
 		author := message.Author
 		if author.ID == botID || author.Bot {
@@ -50,6 +111,7 @@ func main() {
 
 		content := message.Content
 		if len(content) <= len(prefix) {
+			logrus.Errorf("empy message content")
 			return
 		}
 
@@ -89,7 +151,7 @@ func main() {
 	})
 
 	discord.AddHandler(func(discord *discordgo.Session, ready *discordgo.Ready) {
-		if err := discord.UpdateGameStatus(0, "xf help"); err != nil {
+		if err := discord.UpdateGameStatus(0, fmt.Sprintf("%shelp", prefix)); err != nil {
 			logrus.Errorf("can't update to default status. Error: %s\n", err.Error())
 		}
 		guilds := discord.State.Guilds

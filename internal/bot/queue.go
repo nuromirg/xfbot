@@ -59,18 +59,11 @@ func (q *Queue) Pause() {
 }
 
 // Play starts to play songs from the queue
-func (q *Queue) Play(s *Session, writeChannel func(string)) {
+func (q *Queue) Play(s *Session) {
 	q.isPlaying = true
 
 	for q.HasNext() && q.isPlaying {
 		song := q.Next()
-		writeChannel("**Now playing:** " + song.Title + ".")
 		s.Play(song)
-	}
-
-	if !q.isPlaying {
-		writeChannel("Stopped playing.")
-	} else {
-		writeChannel("Finished queue.")
 	}
 }

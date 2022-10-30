@@ -182,9 +182,7 @@ func Play(ctx Context) {
 		}
 	}
 
-	go queue.Play(s, func(msg string) {
-		ctx.Reply(msg)
-	})
+	go queue.Play(s)
 }
 
 func Skip(ctx Context) {

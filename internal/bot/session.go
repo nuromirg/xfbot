@@ -25,7 +25,9 @@ func NewSession(conn *core.Connection, guildID, channelID string) *Session {
 }
 
 func (s *Session) Play(song Song) {
-	s.conn.Play(song.Pipe())
+	if err := s.conn.Play(song.Pipe()); err != nil {
+		return
+	}
 }
 
 func (s *Session) Stop() {
